@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTM Problems - Electronic Music Production in Linux by CDNJ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#08080e;--bg2:#0d0d18;--card:#14142a;--card-hover:#1c1c3e;--fg:#e2e2f0;--fg2:#7a7a9a;--accent:#7c6ff0;--accent2:#b8aaff;--accent3:#50e3a0;--orange:#f5a623;--red:#ff6b6b;--border:#28284d;--radius:16px;--cubic:cubic-bezier(.22,1,.36,1)}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.7;min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;width:100%;height:100%;z-index:9999;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.68' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:256px 256px}
+.container{max-width:860px;margin:0 auto;padding:0 1.5rem}
+
+/* Marquee */
+.marquee-wrap{background:linear-gradient(90deg,var(--accent),#6a5acd,#b8aaff);padding:.45rem 0;overflow:hidden;position:relative}
+.marquee-wrap::before,.marquee-wrap::after{content:'';position:absolute;top:0;width:60px;height:100%;z-index:2;pointer-events:none}
+.marquee-wrap::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.marquee-wrap::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.marquee-inner{display:flex;white-space:nowrap;animation:marquee 35s linear infinite}
+.marquee-wrap:hover .marquee-inner{animation-play-state:paused}
+.marquee-inner span{padding:0 3rem;color:#fff;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;opacity:.9}
+
+/* Creator Bar */
+.creator-bar{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border)}
+.creator-bar .name{font-weight:700;font-size:.95rem;color:#fff;text-decoration:none}
+.creator-bar .name span{color:var(--accent)}
+.creator-bar .links{display:flex;gap:1rem;font-size:.8rem}
+.creator-bar .links a{color:var(--fg2);text-decoration:none;transition:color .2s}
+.creator-bar .links a:hover{color:var(--accent)}
+
+/* Hero */
+.hero{position:relative;overflow:hidden;border-radius:0 0 var(--radius) var(--radius)}
+.hero-img{width:100%;height:420px;object-fit:cover;display:block;border-radius:0 0 var(--radius) var(--radius)}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,8,14,.95));border-radius:0 0 var(--radius) var(--radius)}
+.hero-text{position:absolute;bottom:2.5rem;left:0;right:0;padding:0 1.5rem;max-width:860px;margin:0 auto}
+.hero-text h1{font-size:2.8rem;font-weight:800;background:linear-gradient(135deg,#fff 0%,var(--accent2) 50%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;margin-bottom:.5rem}
+.hero-text p{color:var(--fg2);font-size:1.05rem;max-width:600px}
+
+/* Creator Section */
+.creator-section{display:flex;align-items:center;gap:2rem;padding:3rem 1.5rem;max-width:860px;margin:0 auto}
+.creator-avatar{flex:0 0 100px;width:100px;height:100px;border-radius:50%;overflow:hidden;border:2px solid var(--accent);position:relative}
+.creator-avatar img{width:100%;height:100%;object-fit:cover}
+.creator-bio{flex:1}
+.creator-bio h2{font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:.3rem}
+.creator-bio .handle{color:var(--accent);font-size:.85rem;font-weight:500;margin-bottom:.6rem;display:block}
+.creator-bio p{color:var(--fg2);font-size:.92rem;line-height:1.7;margin-bottom:.8rem}
+.creator-bio .portfolio-link{display:inline-flex;align-items:center;gap:.4rem;color:var(--accent2);font-weight:600;font-size:.85rem;text-decoration:none;transition:gap .3s}
+.creator-bio .portfolio-link:hover{gap:.7rem}
+
+/* Posts */
+.posts-section{padding:0 0 4rem}
+.posts-section h2{font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;color:#fff;display:flex;align-items:center;gap:.6rem}
+.posts-section h2::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .7s var(--cubic),transform .7s var(--cubic)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+.post-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;transition:all .4s var(--cubic);cursor:pointer}
+.post-card-img{width:100%;height:200px;object-fit:cover;display:block;border-bottom:1px solid var(--border)}
+.post-card-body{padding:1.5rem}
+.post-card:hover{background:var(--card-hover);border-color:var(--accent);transform:translateX(6px) scale(1.01)}
+.post-card a{text-decoration:none;color:inherit;display:block}
+.post-card .meta{display:flex;align-items:center;gap:.8rem;margin-bottom:.6rem;font-size:.8rem;color:var(--fg2)}
+.post-card .tag{display:inline-block;background:rgba(124,111,240,.15);color:var(--accent2);padding:.15rem .6rem;border-radius:6px;font-size:.75rem;font-weight:600}
+.post-card h3{font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:.5rem}
+.post-card p{color:var(--fg2);font-size:.95rem;line-height:1.6}
+.post-card .read-more{display:inline-block;margin-top:.8rem;color:var(--accent);font-weight:600;font-size:.9rem;text-decoration:none}
+.post-card .read-more::after{content:'\2192';margin-left:.3rem;display:inline-block;transition:transform .3s}
+.post-card:hover .read-more::after{transform:translateX(4px)}
+
+footer{text-align:center;padding:3rem 1.5rem;border-top:1px solid var(--border);color:var(--fg2);font-size:.85rem}
+footer .ai-credit{margin-top:.5rem;font-size:.8rem;color:#555}
+footer .ai-credit strong{color:var(--accent2)}
+
+@media(max-width:640px){
+  .hero-img{height:280px}
+  .hero-text h1{font-size:1.8rem}
+  .hero-text{position:relative;bottom:0;padding:1.5rem;background:linear-gradient(0deg,rgba(8,8,14,1),transparent)}
+  .creator-section{flex-direction:column;text-align:center;gap:1rem;padding:2rem 1.5rem}
+  .creator-section .portfolio-link{justify-content:center}
+  .post-card-img{height:140px}
+  .creator-bar{padding:.6rem 1rem}
+}
+</style>
+</head>
+<body>
+
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <span>New: Kontakt 8 on Nobara Linux - Complete Guide</span>
+    <span>New: Fixing Ctrl+Click Links in KDE Konsole</span>
+    <span>New: Kontakt 8 on Nobara Linux - Complete Guide</span>
+    <span>New: Fixing Ctrl+Click Links in KDE Konsole</span>
+  </div>
+</div>
+
+<div class="creator-bar">
+  <a href="https://cdnjmusic.wixstudio.com/portfolio" class="name">CDNJ <span>/</span> Riddhiman Dutta</a>
+  <div class="links">
+    <a href="https://cdnjmusic.wixstudio.com/portfolio">Portfolio</a>
+    <a href="https://cdnjmusic.wixstudio.com/portfolio/blank">Music</a>
+  </div>
+</div>
+
+<div class="hero">
+  <img class="hero-img" src="https://images.pexels.com/photos/3784221/pexels-photo-3784221.jpeg?auto=compress&cs=tinysrgb&w=1260&h=650&dpr=2" alt="Recording studio mixer desk" loading="eager">
+  <div class="hero-overlay"></div>
+  <div class="hero-text">
+    <h1>Electronic Music Production in Linux</h1>
+    <p>Real problems, real solutions. Running Windows VSTs on Linux without losing your mind - one plugin at a time.</p>
+  </div>
+</div>
+
+<section class="creator-section reveal">
+  <div class="creator-avatar">
+    <img src="https://images.pexels.com/photos/845451/pexels-photo-845451.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=2&fit=crop" alt="CDNJ" loading="lazy">
+  </div>
+  <div class="creator-bio">
+    <h2>Hi, I'm Riddhiman</h2>
+    <span class="handle">aka CDNJ</span>
+    <p>14 years of Indian classical music discipline turned into a rabbit hole of orchestral scoring, electronic sound design, and cinematic storytelling. This site documents my journey running Windows VSTs on Linux so you don't have to bang your head against the same walls I did.</p>
+    <a class="portfolio-link" href="https://cdnjmusic.wixstudio.com/portfolio" target="_blank">Visit my portfolio &#8594;</a>
+  </div>
+</section>
+
+<div class="container">
+  <section class="posts-section">
+    <h2>Latest Posts</h2>
+
+    <article class="post-card reveal" id="post1">
+      <a href="posts/kontakt-8-nobara-linux.html">
+        <img class="post-card-img" src="https://images.pexels.com/photos/12409937/pexels-photo-12409937.jpeg?auto=compress&cs=tinysrgb&w=860&h=200&dpr=2&fit=crop" alt="Synthesizer workstation" loading="lazy">
+        <div class="post-card-body">
+          <div class="meta">
+            <span>May 14, 2026</span>
+            <span class="tag">Kontakt</span>
+            <span class="tag">Wine</span>
+            <span class="tag">yabridge</span>
+          </div>
+          <h3>Running Kontakt 8.7.0 on Nobara Linux with Wine &amp; Yabridge</h3>
+          <p>The complete guide - from a broken Kontakt 7 installation to a fully functional Kontakt 8 with 23+ libraries, working GUI, and sound. Includes the dreaded "unclickable GUI" fix.</p>
+          <span class="read-more">Read more</span>
+        </div>
+      </a>
+    </article>
+
+    <article class="post-card reveal" id="post2">
+      <a href="posts/konsole-ctrl-click-link-fix-kde.html">
+        <img class="post-card-img" src="https://images.pexels.com/photos/14553713/pexels-photo-14553713.jpeg?auto=compress&cs=tinysrgb&w=860&h=200&dpr=2&fit=crop" alt="Code on screen" loading="lazy">
+        <div class="post-card-body">
+          <div class="meta">
+            <span>May 16, 2026</span>
+            <span class="tag">KDE</span>
+            <span class="tag">Konsole</span>
+            <span class="tag">Troubleshooting</span>
+          </div>
+          <h3>Fixing Ctrl+Click Links in KDE Konsole (kioexec Cache Bug)</h3>
+          <p>Why Ctrl+clicking URLs in Konsole opens cached temp files instead of your browser, and how to fix it with $BROWSER, .desktop registration, or API token authentication.</p>
+          <span class="read-more">Read more</span>
+        </div>
+      </a>
+    </article>
+  </section>
+</div>
+
+<footer>
+  <p><strong>DTM Problems</strong> - Electronic Music Production in Linux by CDNJ / Riddhiman Dutta</p>
+  <p class="ai-credit">Built with assistance from <strong>DeepSeek V4 Flash Free</strong></p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') });
+}, { threshold: .1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

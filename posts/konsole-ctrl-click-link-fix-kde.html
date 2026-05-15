@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixing Ctrl+Click Links in KDE Konsole - DTM Problems</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#08080e;--bg2:#0d0d18;--card:#14142a;--card-hover:#1c1c3e;--fg:#e2e2f0;--fg2:#7a7a9a;--accent:#7c6ff0;--accent2:#b8aaff;--accent3:#50e3a0;--orange:#f5a623;--red:#ff6b6b;--border:#28284d;--radius:16px;--cubic:cubic-bezier(.22,1,.36,1)}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.8;min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;width:100%;height:100%;z-index:9999;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.68' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:256px 256px}
+.container{max-width:740px;margin:0 auto;padding:0 1.5rem}
+
+/* Marquee */
+.marquee-wrap{background:linear-gradient(90deg,var(--accent),#6a5acd,#b8aaff);padding:.45rem 0;overflow:hidden;position:relative}
+.marquee-wrap::before,.marquee-wrap::after{content:'';position:absolute;top:0;width:60px;height:100%;z-index:2;pointer-events:none}
+.marquee-wrap::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.marquee-wrap::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.marquee-inner{display:flex;white-space:nowrap;animation:marquee 35s linear infinite}
+.marquee-wrap:hover .marquee-inner{animation-play-state:paused}
+.marquee-inner span{padding:0 3rem;color:#fff;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;opacity:.9}
+
+/* Creator Bar */
+.creator-bar{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border)}
+.creator-bar .name{font-weight:700;font-size:.95rem;color:#fff;text-decoration:none}
+.creator-bar .name span{color:var(--accent)}
+.creator-bar .links{display:flex;gap:1rem;font-size:.8rem}
+.creator-bar .links a{color:var(--fg2);text-decoration:none;transition:color .2s}
+.creator-bar .links a:hover{color:var(--accent)}
+
+.post-content{padding-bottom:4rem}
+
+.back-link{display:inline-flex;align-items:center;gap:.4rem;color:var(--fg2);text-decoration:none;font-size:.85rem;margin:1.5rem 0 1rem;transition:color .2s}
+.back-link:hover{color:var(--accent)}
+
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s var(--cubic),transform .7s var(--cubic)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+.post-hero{width:100%;border-radius:var(--radius);overflow:hidden;margin-bottom:2.5rem;position:relative}
+.post-hero img{width:100%;height:300px;object-fit:cover;display:block}
+.post-hero .overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,8,14,.9))}
+
+article header{margin-bottom:2.5rem}
+article header h1{font-size:2.2rem;font-weight:800;color:#fff;line-height:1.3;margin-bottom:1rem}
+article header .meta{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;color:var(--fg2);font-size:.9rem;margin-bottom:1.5rem}
+article header .tag{display:inline-block;background:rgba(124,111,240,.15);color:var(--accent2);padding:.2rem .7rem;border-radius:6px;font-size:.8rem;font-weight:600}
+article header .summary{font-size:1.1rem;color:var(--fg2);line-height:1.7;border-left:3px solid var(--accent);padding-left:1.2rem}
+
+h2{font-size:1.5rem;font-weight:700;color:#fff;margin:2.5rem 0 1rem;display:flex;align-items:center;gap:.6rem}
+h2::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+h3{font-size:1.15rem;font-weight:600;color:var(--accent2);margin:1.8rem 0 .8rem}
+p{margin-bottom:1rem;color:var(--fg)}
+ul,ol{margin:.5rem 0 1.2rem 1.5rem}
+li{margin-bottom:.4rem}
+code{font-family:'JetBrains Mono',monospace;font-size:.88em}
+:not(pre)>code{background:rgba(124,111,240,.1);color:var(--accent2);padding:.15em .4em;border-radius:4px;font-size:.85em}
+pre{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;overflow-x:auto;font-size:.82rem;line-height:1.6;margin:1rem 0;font-family:'JetBrains Mono',monospace}
+
+.callout{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:1.2rem 1.4rem;margin:1.5rem 0}
+.callout.warn{border-left-color:var(--orange)}
+.callout.err{border-left-color:var(--red)}
+.callout.ok{border-left-color:var(--accent3)}
+.callout strong{color:#fff;display:block;margin-bottom:.3rem}
+
+hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0}
+
+footer{text-align:center;padding:3rem 1.5rem;border-top:1px solid var(--border);color:var(--fg2);font-size:.85rem}
+footer .ai-credit{margin-top:.5rem;font-size:.8rem;color:#555}
+footer .ai-credit strong{color:var(--accent2)}
+
+@media(max-width:640px){
+  .post-hero img{height:200px}
+  article header h1{font-size:1.6rem}
+  h2{font-size:1.25rem}
+  pre{font-size:.75rem}
+}
+</style>
+</head>
+<body>
+
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <span>New: Kontakt 8 on Nobara Linux - Complete Guide</span>
+    <span>New: Fixing Ctrl+Click Links in KDE Konsole</span>
+    <span>New: Kontakt 8 on Nobara Linux - Complete Guide</span>
+    <span>New: Fixing Ctrl+Click Links in KDE Konsole</span>
+  </div>
+</div>
+
+<div class="creator-bar">
+  <a href="https://cdnjmusic.wixstudio.com/portfolio" class="name">CDNJ <span>/</span> Riddhiman Dutta</a>
+  <div class="links">
+    <a href="../index.html">Home</a>
+    <a href="https://cdnjmusic.wixstudio.com/portfolio">Portfolio</a>
+  </div>
+</div>
+
+<div class="post-hero reveal">
+  <img src="https://images.pexels.com/photos/14553713/pexels-photo-14553713.jpeg?auto=compress&cs=tinysrgb&w=1260&h=300&dpr=2&fit=crop" alt="Code on computer screen" loading="eager">
+  <div class="overlay"></div>
+</div>
+
+<div class="container">
+
+  <a href="../index.html" class="back-link">&#8592; Back to all posts</a>
+
+  <article>
+    <header class="reveal">
+      <div class="meta">
+        <span>May 16, 2026</span>
+        <span class="tag">KDE</span>
+        <span class="tag">Konsole</span>
+        <span class="tag">kioexec</span>
+        <span class="tag">Browser</span>
+        <span class="tag">Troubleshooting</span>
+      </div>
+      <h1>Fixing Ctrl+Click Links in KDE Konsole (kioexec Cache Bug)</h1>
+      <p class="summary">
+        Ctrl+clicking a URL in Konsole opens <code>file:///home/you/.cache/kioexec/krun/.../unnamed</code> instead of your browser? Here's why and how to fix it.
+      </p>
+    </header>
+
+    <div class="post-content">
+      <div class="reveal">
+        <div class="callout err">
+          <strong>Symptoms</strong>
+          Any Ctrl+click on a URL in Konsole (or any KDE app launching a browser via <code>xdg-open</code>) results in a cached HTML file being opened from <code>~/.cache/kioexec/</code> instead of loading the actual URL in your browser. The browser opens with a path like <code>file:///home/user/.cache/kioexec/krun/26256_0/unnamed</code>.
+        </div>
+      </div>
+
+      <div class="reveal">
+        <h2>The Root Cause</h2>
+        <p>
+          KDE's <strong>kioexec</strong> is a KIO worker that intercepts <code>xdg-open</code> calls for HTTP/HTTPS URLs. Instead of passing the URL directly to your browser, it downloads the page to a temp file under <code>~/.cache/kioexec/</code> and opens <em>that</em>. This is meant for FTP or local file handling - but it misfires on regular web links when the <code>BROWSER</code> environment variable is unset or points to a binary that doesn't exist.
+        </p>
+      </div>
+
+      <div class="reveal">
+        <h2>The Fix (3 Methods)</h2>
+
+        <h3>Method 1: Set the <code>BROWSER</code> Env Var</h3>
+        <pre># Standard installs:
+export BROWSER="firefox"
+
+# Flatpak:
+export BROWSER="flatpak run org.mozilla.firefox"
+
+# Custom path (e.g. Zen Browser in /opt):
+export BROWSER="/opt/zen/zen"</pre>
+        <pre>echo 'export BROWSER="/opt/zen/zen"' >> ~/.bashrc</pre>
+
+        <h3>Method 2: Create a .desktop File</h3>
+        <pre>cat > ~/.local/share/applications/my-browser.desktop &lt;&lt; 'EOF'
+[Desktop Entry]
+Name=My Browser
+Exec=/opt/zen/zen %u
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/http;x-scheme-handler/https;text/html;
+EOF
+
+xdg-settings set default-web-browser my-browser.desktop
+xdg-mime default my-browser.desktop x-scheme-handler/http
+xdg-mime default my-browser.desktop x-scheme-handler/https</pre>
+
+        <h3>Method 3: Disable Ctrl+Click in Konsole</h3>
+        <pre>Konsole &#8594; Settings &#8594; Configure Konsole &#8594; General
+&#8594; Uncheck "Enable Ctrl+Click for URLs"</pre>
+      </div>
+
+      <div class="reveal">
+        <h2>Why This Happens</h2>
+        <p>
+          KDE Plasma uses <code>kioexec</code> as a generic protocol handler. When you Ctrl+click a URL in Konsole, Konsole asks the system to open the URL via <code>xdg-open</code>. On KDE, <code>xdg-open</code> delegates to <code>kioclient exec</code>, which hands it to <code>kioexec</code>. kioexec sees an HTTP URL, thinks "I should download this file first," fetches it into <code>~/.cache/kioexec/</code>, and tells the system to open the cached copy.
+        </p>
+        <p>
+          The result: instead of your browser loading <code>https://example.com/login</code>, it loads <code>file:///home/you/.cache/kioexec/krun/12345_0/unnamed</code> - which is a stale or broken HTML snapshot.
+        </p>
+
+        <div class="callout ok">
+          <strong>Why method 1 works</strong><br>
+          Many CLI tools (<code>dv login</code>, <code>gh auth login</code>, etc.) check the <code>$BROWSER</code> environment variable first. If it's set to a valid browser binary, they call it directly instead of going through <code>xdg-open</code>, bypassing kioexec entirely.
+        </div>
+      </div>
+
+      <div class="reveal">
+        <h2>For CLI Auth Flows (Alternative)</h2>
+        <p>
+          If a tool's browser-based login still fails even after fixing this, skip the browser redirect entirely by using an <strong>API token</strong>:
+        </p>
+        <pre># Example for Diversion (dv)
+# 1. Log in via the web UI manually
+# 2. Go to Settings &#8594; API Tokens &#8594; Generate
+# 3. Use the token directly:
+dv authenticate &lt;your-token&gt;</pre>
+      </div>
+
+      <div class="reveal">
+        <hr>
+        <p><em>This post is part of the <strong>DTM Problems</strong> series - documenting real-world solutions for electronic music production on Linux.</em></p>
+      </div>
+    </div>
+  </article>
+</div>
+
+<footer>
+  <p><strong>DTM Problems</strong> - Electronic Music Production in Linux by CDNJ / Riddhiman Dutta</p>
+  <p class="ai-credit">Built with assistance from <strong>DeepSeek V4 Flash Free</strong></p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') });
+}, { threshold: .1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
