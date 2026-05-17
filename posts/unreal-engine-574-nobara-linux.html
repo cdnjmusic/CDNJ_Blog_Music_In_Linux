@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unreal Engine 5.7.4 on Nobara Linux (NVIDIA) — The Survival Guide - DTM Problems</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#08080e;--bg2:#0d0d18;--card:#14142a;--card-hover:#1c1c3e;--fg:#e2e2f0;--fg2:#7a7a9a;--accent:#7c6ff0;--accent2:#b8aaff;--accent3:#50e3a0;--orange:#f5a623;--red:#ff6b6b;--border:#28284d;--radius:16px;--cubic:cubic-bezier(.22,1,.36,1)}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--fg);line-height:1.8;min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;width:100%;height:100%;z-index:9999;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.68' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:256px 256px}
+.container{max-width:740px;margin:0 auto;padding:0 1.5rem}
+
+/* Marquee */
+.marquee-wrap{background:linear-gradient(90deg,var(--accent),#6a5acd,#b8aaff);padding:.45rem 0;overflow:hidden;position:relative}
+.marquee-wrap::before,.marquee-wrap::after{content:'';position:absolute;top:0;width:60px;height:100%;z-index:2;pointer-events:none}
+.marquee-wrap::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.marquee-wrap::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.marquee-inner{display:flex;white-space:nowrap;animation:marquee 35s linear infinite}
+.marquee-wrap:hover .marquee-inner{animation-play-state:paused}
+.marquee-inner span{padding:0 3rem;color:#fff;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;opacity:.9}
+
+/* Creator Bar */
+.creator-bar{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border)}
+.creator-bar .name{font-weight:700;font-size:.95rem;color:#fff;text-decoration:none}
+.creator-bar .name span{color:var(--accent)}
+.creator-bar .links{display:flex;gap:1rem;font-size:.8rem}
+.creator-bar .links a{color:var(--fg2);text-decoration:none;transition:color .2s}
+.creator-bar .links a:hover{color:var(--accent)}
+
+.post-content{padding-bottom:4rem}
+
+.back-link{display:inline-flex;align-items:center;gap:.4rem;color:var(--fg2);text-decoration:none;font-size:.85rem;margin:1.5rem 0 1rem;transition:color .2s}
+.back-link:hover{color:var(--accent)}
+
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s var(--cubic),transform .7s var(--cubic)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+.post-hero{width:100%;border-radius:var(--radius);overflow:hidden;margin-bottom:2.5rem;position:relative}
+.post-hero img{width:100%;height:300px;object-fit:cover;display:block}
+.post-hero .overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,8,14,.9))}
+
+article header{margin-bottom:2.5rem}
+article header h1{font-size:2.2rem;font-weight:800;color:#fff;line-height:1.3;margin-bottom:1rem}
+article header .meta{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;color:var(--fg2);font-size:.9rem;margin-bottom:1.5rem}
+article header .tag{display:inline-block;background:rgba(124,111,240,.15);color:var(--accent2);padding:.2rem .7rem;border-radius:6px;font-size:.8rem;font-weight:600}
+article header .summary{font-size:1.1rem;color:var(--fg2);line-height:1.7;border-left:3px solid var(--accent);padding-left:1.2rem}
+
+h2{font-size:1.5rem;font-weight:700;color:#fff;margin:2.5rem 0 1rem;display:flex;align-items:center;gap:.6rem}
+h2::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+h3{font-size:1.15rem;font-weight:600;color:var(--accent2);margin:1.8rem 0 .8rem}
+p{margin-bottom:1rem;color:var(--fg)}
+ul,ol{margin:.5rem 0 1.2rem 1.5rem}
+li{margin-bottom:.4rem}
+code{font-family:'JetBrains Mono',monospace;font-size:.88em}
+:not(pre)>code{background:rgba(124,111,240,.1);color:var(--accent2);padding:.15em .4em;border-radius:4px;font-size:.85em}
+pre{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;overflow-x:auto;font-size:.82rem;line-height:1.6;margin:1rem 0;font-family:'JetBrains Mono',monospace}
+
+.callout{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:1.2rem 1.4rem;margin:1.5rem 0}
+.callout.warn{border-left-color:var(--orange)}
+.callout.err{border-left-color:var(--red)}
+.callout.ok{border-left-color:var(--accent3)}
+.callout strong{color:#fff;display:block;margin-bottom:.3rem}
+
+table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.9rem}
+th,td{text-align:left;padding:.7rem .8rem;border-bottom:1px solid var(--border)}
+th{color:var(--fg2);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
+td{color:var(--fg)}
+
+.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.toc strong{color:#fff;display:block;margin-bottom:.8rem}
+.toc ol{margin:0}
+.toc li{margin-bottom:.3rem}
+.toc a{color:var(--accent2);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+
+hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0}
+
+footer{text-align:center;padding:3rem 1.5rem;border-top:1px solid var(--border);color:var(--fg2);font-size:.85rem}
+footer .ai-credit{margin-top:.5rem;font-size:.8rem;color:#555}
+footer .ai-credit strong{color:var(--accent2)}
+
+@media(max-width:640px){
+  .post-hero img{height:200px}
+  article header h1{font-size:1.6rem}
+  h2{font-size:1.25rem}
+  pre{font-size:.75rem}
+}
+</style>
+</head>
+<body>
+
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <span>New: Unreal Engine 5.7.4 on Nobara Linux - The Survival Guide</span>
+    <span>New: Kontakt 8 on Nobara Linux - Complete Guide</span>
+    <span>New: Fixing Ctrl+Click Links in KDE Konsole</span>
+    <span>New: Unreal Engine 5.7.4 on Nobara Linux - The Survival Guide</span>
+  </div>
+</div>
+
+<div class="creator-bar">
+  <a href="https://cdnjmusic.wixstudio.com/portfolio" class="name">CDNJ <span>/</span> Riddhiman Dutta</a>
+  <div class="links">
+    <a href="../index.html">Home</a>
+    <a href="https://cdnjmusic.wixstudio.com/portfolio">Portfolio</a>
+  </div>
+</div>
+
+<div class="post-hero reveal">
+  <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimg-blog.csdnimg.cn%2Fimg_convert%2Ff63a0bae326c160747a072400beba1e5.jpeg&f=1&nofb=1&ipt=6969fe328251ed521cd66f8015f60ff178c0c8d1a9b26daa3cdac3a9782d627f" alt="Unreal Engine editor interface" loading="eager">
+  <div class="overlay"></div>
+</div>
+
+<div class="container">
+
+  <a href="../index.html" class="back-link">&#8592; Back to all posts</a>
+
+  <article>
+    <header class="reveal">
+      <div class="meta">
+        <span>May 17, 2026</span>
+        <span class="tag">Unreal Engine</span>
+        <span class="tag">Nobara</span>
+        <span class="tag">Vulkan</span>
+        <span class="tag">NVIDIA</span>
+        <span class="tag">Game Dev</span>
+      </div>
+      <h1>Installing Unreal Engine 5.7.4 on Nobara Linux (NVIDIA) — The Full Vulkan, X11, Fab &amp; Quixel Survival Guide</h1>
+      <p class="summary">
+        How a GTX 1650, Nobara Linux, Vulkan, Fab, Quixel Bridge, and Unreal Engine 5.7.4 finally learned to coexist. Every crash, every fix, every command — a real Linux gamedev survival story.
+      </p>
+    </header>
+
+    <div class="toc reveal">
+      <strong>Table of Contents</strong>
+      <ol>
+        <li><a href="#why">Why Install UE5 on Linux?</a></li>
+        <li><a href="#install">The Initial Installation</a></li>
+        <li><a href="#download">Downloading Unreal Engine Linux Binary</a></li>
+        <li><a href="#fab">Understanding the Fab Plugin</a></li>
+        <li><a href="#quixel">Understanding Quixel Bridge on Linux</a></li>
+        <li><a href="#standalone">Why Linux Users Need Standalone Plugin ZIPs</a></li>
+        <li><a href="#extraction">Proper Extraction Procedure</a></li>
+        <li><a href="#first">First Launch Problems</a></li>
+        <li><a href="#dark">Dark Levels and Missing Lighting</a></li>
+        <li><a href="#shader">Shader Compilation Chaos</a></li>
+        <li><a href="#cpu">CPU Usage and Freezes</a></li>
+        <li><a href="#wayland">Wayland Problems</a></li>
+        <li><a href="#phantom">Phantom Misclicks and UI Offset</a></li>
+        <li><a href="#sdl">Discovering the SDL X11 Fix</a></li>
+        <li><a href="#vulkan">Vulkan Memory Problems</a></li>
+        <li><a href="#swap">Swap Space Investigation</a></li>
+        <li><a href="#swapon">Using swapon --show</a></li>
+        <li><a href="#whyswap">Why Swap Matters for Unreal</a></li>
+        <li><a href="#transient">Vulkan Transient Heap Errors</a></li>
+        <li><a href="#convar">ConsoleVariables.ini Optimizations</a></li>
+        <li><a href="#disable">Disabling Heavy UE5 Features</a></li>
+        <li><a href="#nanite">Why Nanite and Lumen Were Disabled</a></li>
+        <li><a href="#stylized">Why Stylized Games Don't Need Heavy RTX Features</a></li>
+        <li><a href="#vram">VRAM Management on Linux</a></li>
+        <li><a href="#forward">Forward Rendering Recommendation</a></li>
+        <li><a href="#vt">Disabling Virtual Textures</a></li>
+        <li><a href="#launch">Final Stable Launch Command</a></li>
+        <li><a href="#result">Result: A Stable Linux UE5 Workstation</a></li>
+        <li><a href="#advice">Advice for Other Linux Gamedevs</a></li>
+        <li><a href="#final">Final Thoughts</a></li>
+      </ol>
+    </div>
+
+    <div class="post-content">
+
+      <div class="reveal" id="why">
+        <h2>1. Why Install UE5 on Linux?</h2>
+        <p>
+          If you make music on Linux, you eventually wonder: can I make games here too? Not just simple ones — real games. Unreal Engine 5-class projects. The kind that use Nanite, Lumen, Megascans, and the whole cinematic pipeline. The kind that Epic Games officially says "runs on Linux" but leaves you to figure out how.
+        </p>
+        <p>
+          I produce electronic music. I compose orchestral scores. I work in REAPER, Bitwig, and Kontakt. But somewhere along the way, the tools I use for sound design started overlapping with tools for game development. Environmental audio. Interactive music. FMOD. Wwise. And eventually — why not just build the whole world myself?
+        </p>
+        <p>
+          The problem: Epic Games does not ship a Linux launcher. There is no "Install" button on Linux. There is no Epic Games Store popup that sets everything up for you. What you get is a ZIP file — a raw, 20+ gigabyte archive of binaries, headers, and plugins — and a handshake that says "good luck."
+        </p>
+        <p>
+          This is the story of how I got Unreal Engine 5.7.4 running on Nobara Linux with a GTX 1650, 16GB of RAM, and an i3-10105F. No RTX. No 32GB of VRAM. No Windows dual-boot. Just Vulkan, patience, and a lot of terminal commands.
+        </p>
+
+        <div class="callout">
+          <strong>System Specs</strong>
+          OS: Nobara Linux 43 (Fedora-based, KDE Plasma)<br>
+          GPU: NVIDIA GeForce GTX 1650 4GB<br>
+          CPU: Intel i3-10105F<br>
+          RAM: 16GB DDR4<br>
+          Swap: zram + physical swap on nvme0n1p4<br>
+          Display Server: X11 (with Wayland available)<br>
+          Unreal Engine: 5.7.4 Linux binary build<br>
+          Renderer: Vulkan<br>
+          Driver: NVIDIA 595.58.03
+        </div>
+      </div>
+
+      <div class="reveal" id="install">
+        <h2>2. The Initial Installation</h2>
+        <p>
+          Let me be honest with you: the first time I tried to install Unreal Engine on Linux, I thought I broke my computer. The terminal output looked like a kernel panic. The editor launched to a black void. Nothing was clickable. I closed it, reopened it, same thing. Then I checked forums and found a hundred other people having a hundred different problems, none of which exactly matched mine.
+        </p>
+        <p>
+          That's the thing about UE5 on Linux. The engine works. Epic ships Linux binaries. But the ecosystem around it — the launcher, the marketplace, the plugin manager — is built for Windows. On Linux, you're not just learning Unreal. You're learning how to feed it by hand.
+        </p>
+      </div>
+
+      <div class="reveal" id="download">
+        <h2>3. Downloading Unreal Engine Linux Binary</h2>
+        <p>
+          Unreal Engine 5.7.4 for Linux is distributed as a single large ZIP archive from Epic's developer portal. There's no package manager-friendly `.deb` or `.rpm`. No AppImage. No Flatpak. You get the ZIP, you extract it, you run the binary. That's the entire installation process — and also the entire source of every problem that follows.
+        </p>
+        <pre># Create the destination
+mkdir -p ~/Documents/UE5.7.4
+
+# Extract (this takes a while — go make tea)
+unzip Linux_Unreal_Engine_5.7.4.zip -d ~/Documents/UE5.7.4</pre>
+        <p>
+          <strong>Expect this to take 15–30 minutes depending on your disk speed.</strong> The archive is massive. It contains not just the editor binary but the entire engine source, all shaders, all plugins, all templates, and all toolchain dependencies. When it finishes, you'll have a directory structure that looks roughly like this:
+        </p>
+        <pre>~/Documents/UE5.7.4/
+  Engine/
+    Binaries/
+    Build/
+    Config/
+    Content/
+    Plugins/
+    Source/
+    ...
+  GenerateProjectFiles.sh
+  Makefile
+  UnrealEditor</pre>
+        <p>
+          The <code>UnrealEditor</code> binary at the root is what you'll launch. Don't double-click it in your file manager — not yet. It will fail. It needs environment hints.
+        </p>
+      </div>
+
+      <div class="reveal" id="fab">
+        <h2>4. Understanding the Fab Plugin</h2>
+        <p>
+          In 2024, Epic Games unified its marketplace ecosystem under a single brand: <strong>Fab</strong>. Fab replaces the old Unreal Engine Marketplace and Sketchfab Store. It's a single storefront for buying and selling 3D models, environments, sound assets, VFX, and entire game templates — all accessible from within the engine.
+        </p>
+        <p>
+          On Windows, installing the Fab plugin is trivial — you click a button in the Epic Games Launcher and it deploys automatically into your engine's plugin directory. On Linux, there's no launcher. So you need the Fab plugin ZIP.
+        </p>
+        <p>
+          The Fab plugin provides the in-editor "Fab" panel that lets you browse, purchase, and download marketplace content directly. Without it, you're cut off from one of Unreal's biggest strengths: the asset ecosystem.
+        </p>
+      </div>
+
+      <div class="reveal" id="quixel">
+        <h2>5. Understanding Quixel Bridge on Linux</h2>
+        <p>
+          Quixel Bridge is the desktop application that connects you to Megascans — the world's largest library of photogrammetry-scanned surfaces and 3D assets. Megascans are captured from real-world objects and environments: rocks, bark, moss, asphalt, fabric, skin, you name it. Each scan is processed into a PBR-ready material with albedo, normal, roughness, ambient occlusion, and displacement maps.
+        </p>
+        <p>
+          For environment artists, Quixel is a superpower. You can build a photorealistic forest floor from drag-and-drop assets in minutes. But Quixel Bridge is also a Windows/macOS application. On Linux, you run the standalone plugin inside Unreal directly, or you download assets through the web interface.
+        </p>
+        <p>
+          The workflow goes like this:
+        </p>
+        <ol>
+          <li>Browse the Quixel Megascans library (web or Bridge application)</li>
+          <li>Download the assets as a plugin-ready package</li>
+          <li>Drag them into your Unreal level from the Content Browser</li>
+          <li>Materials, meshes, and textures all import automatically</li>
+        </ol>
+        <p>
+          This is why getting the Quixel Bridge plugin working inside Unreal on Linux matters. Without it, you lose drag-and-drop Megascans integration and have to import everything manually.
+        </p>
+      </div>
+
+      <div class="reveal" id="standalone">
+        <h2>6. Why Linux Users Need Standalone Plugin ZIPs</h2>
+        <p>
+          Here's the core difference between Windows and Linux Unreal workflows:
+        </p>
+        <p>
+          <strong>On Windows:</strong> You install the Epic Games Launcher. It manages engine versions, plugins, and marketplace assets. You click "Install to Engine" and it deploys everything to the right directory. The launcher handles file paths, registry entries, and dependency resolution.
+        </p>
+        <p>
+          <strong>On Linux:</strong> There is no launcher. There is no "Install to Engine" button. There is only the ZIP.
+        </p>
+        <p>
+          Epic provides plugin ZIPs through the Fab website and the Quixel Bridge website. You download them manually. You extract them manually. You place them in the correct engine subdirectory manually. If you put them in the wrong place, the engine won't see them. No error message. No warning. They just won't appear.
+        </p>
+        <p>
+          This is not a bug. It's not even neglect — Epic explicitly supports Linux as a build target and distributes the engine for Linux. But the ecosystem tooling is Windows-first, and the Linux experience requires you to understand how Unreal's plugin system actually works at the filesystem level.
+        </p>
+      </div>
+
+      <div class="reveal" id="extraction">
+        <h2>7. Proper Extraction Procedure</h2>
+        <p>
+          There are two ways plugin ZIPs arrive on your filesystem:
+        </p>
+
+        <h3>Case A: ZIP Contains Engine/ Directory</h3>
+        <p>
+          Some plugin ZIPs are structured as overlay archives — they contain the <code>Engine/</code> directory at the root, mirroring the engine's own structure. In this case, you can extract directly into the UE root directory:
+        </p>
+        <pre>unzip FabPlugin.zip -d ~/Documents/UE5.7.4/</pre>
+        <p>
+          This merges the plugin files into the existing <code>Engine/Plugins/</code> tree automatically.
+        </p>
+
+        <h3>Case B: ZIP Contains Only the Plugin Folder</h3>
+        <p>
+          More commonly, the ZIP contains just the plugin folder itself — <code>Fab/</code> or <code>QuixelBridge/</code>. In this case, you need to move it manually:
+        </p>
+        <pre># Extract the ZIP somewhere temporary
+unzip Fab.zip -d /tmp/fab-plugin
+
+# Move the plugin folder into the Marketplace plugins directory
+mv /tmp/fab-plugin/Fab ~/Documents/UE5.7.4/Engine/Plugins/Marketplace/</pre>
+
+        <div class="callout">
+          <strong>Why Engine/Plugins/Marketplace/ ?</strong>
+          Unreal Engine scans several directories for plugins at startup: <code>Engine/Plugins/</code>, <code>Engine/Plugins/Marketplace/</code>, and per-project <code>Plugins/</code> directories. The <code>Marketplace/</code> subdirectory is specifically intended for third-party and store-bought plugins. Placing Fab and Quixel Bridge here keeps them separate from Epic's built-in plugins.
+        </div>
+
+        <div class="callout ok">
+          <strong>Verification</strong>
+          After placing the plugins, verify they're in the right location:
+          <pre>ls ~/Documents/UE5.7.4/Engine/Plugins/Marketplace/
+# Should show: Fab/  QuixelBridge/  (or similar)</pre>
+          The plugins will appear in the editor's Plugin browser under "Marketplace" when you launch.
+        </div>
+
+        <p>
+          If you extract a Quixel Bridge plugin and it doesn't appear in the editor, check two things: (1) you placed it in the correct directory, and (2) the editor is scanning Marketplace plugins. You can verify with <code>Help &rarr; Plugins</code> in the editor — search for "Quixel" or "Bridge".
+        </p>
+      </div>
+
+      <div class="reveal" id="first">
+        <h2>8. First Launch Problems</h2>
+        <p>
+          Here's what happened when I first ran <code>./UnrealEditor</code> fresh from extraction:
+        </p>
+        <pre>./UnrealEditor</pre>
+        <p>
+          The terminal output scrolled for about 30 seconds with log spam about shader caching, Vulkan device enumeration, and SDL initialization. Then a window appeared. It was black. The cursor was visible but wouldn't interact with anything. After about 90 seconds, the window went "not responding" and I force-closed it.
+        </p>
+        <p>
+          I tried again. Same thing.
+        </p>
+        <p>
+          I tried with <code>sudo</code> (don't do this — it breaks file permissions). I tried with different launch flags. I tried removing my GPU driver and reinstalling it. Nothing changed.
+        </p>
+        <p>
+          At this point I was genuinely worried the engine simply wouldn't run on my hardware. A GTX 1650 with 4GB of VRAM is below the "recommended" spec for UE5. Epic recommends at least an RTX 2060 with 6GB. But recommended and required are different things, and I wasn't ready to give up yet.
+        </p>
+      </div>
+
+      <div class="reveal" id="dark">
+        <h2>9. Dark Levels and Missing Lighting</h2>
+        <p>
+          Eventually I got the editor to open — but the viewport was pitch black. Not "dim." Not "my monitor brightness is low." Completely black. I could see the UI (toolbar, content browser, world outliner), but the level itself was a void.
+        </p>
+        <p>
+          This happens for two reasons:
+        </p>
+        <ol>
+          <li><strong>Shader compilation is incomplete.</strong> When Unreal loads a level for the first time, it needs to compile all the shader permutations for your specific GPU. Until those shaders are cached, materials render as opaque black.</li>
+          <li><strong>The default light source hasn't been built.</strong> Even in an empty level, Unreal expects at least one light source. If lighting hasn't been built (or if the auto-generated skylight is still compiling), the scene is physically dark.</li>
+        </ol>
+        <p>
+          The fix: wait. And then wait some more. On a GTX 1650, the first shader compilation pass for a basic "Empty Level" template took about 15 minutes. During that time, the viewport flickered between black and rendered frames until it stabilized.
+        </p>
+        <div class="callout warn">
+          <strong>Patience is not optional.</strong> If you close the editor during initial shader compilation, it will restart from scratch (or close to it) on the next launch. Let it finish, even if it looks broken for the first 10 minutes.
+        </div>
+      </div>
+
+      <div class="reveal" id="shader">
+        <h2>10. Shader Compilation Chaos</h2>
+        <p>
+          Unreal Engine's shader compilation system is simultaneously one of its greatest strengths and most frustrating weaknesses — especially on Linux with Vulkan.
+        </p>
+        <p>
+          When you launch the editor for the first time, here's what happens:
+        </p>
+        <ol>
+          <li>The engine enumerates every material and mesh in the project</li>
+          <li>For each material, it generates all possible shader permutations (based on quality level, feature set, renderer, etc.)</li>
+          <li>Each permutation is compiled from GLSL (Vulkan's shader language) into SPIR-V (the binary format Vulkan consumes)</li>
+          <li>The SPIR-V is cached to disk so subsequent launches are faster</li>
+        </ol>
+        <p>
+          On a CPU like the i3-10105F (4 cores, 8 threads), this is slow. The CPU hits 100% usage across all cores. The editor becomes unresponsive. The "Compiling Shaders" counter climbs into the thousands.
+        </p>
+        <p>
+          On Linux with Vulkan, there's an additional problem: Vulkan shader compilation is done by <code>mesa-shader-cache</code> (or NVIDIA's equivalent) at the driver level, layered on top of Unreal's own shader cache. Both caches need to warm up independently. The first launch compiles everything twice — once into Unreal's internal format, once into the driver's SPIR-V cache.
+        </p>
+        <div class="callout ok">
+          <strong>This gets better.</strong> Launch the editor once, let all shaders compile (even if it takes 30 minutes), close it, and relaunch. The second launch will be significantly faster. By the third or fourth launch, the editor opens in under a minute.
+        </div>
+      </div>
+
+      <div class="reveal" id="cpu">
+        <h2>11. CPU Usage and Freezes</h2>
+        <p>
+          During shader compilation, the editor is effectively frozen. The UI thread is blocked waiting for the shader compilation worker threads to finish. If you check system monitor, you'll see:
+        </p>
+        <ul>
+          <li><code>UnrealEditor</code> consuming 100% of all CPU cores</li>
+          <li>Memory usage climbing to 10–12GB (out of 16GB)</li>
+          <li>Disk I/O spikes as shader cache is written to disk</li>
+          <li>GPU utilization near 0% (no rendering happening yet)</li>
+        </ul>
+        <p>
+          This is normal. The editor is not hung — it's building its rendering pipeline from scratch. On a more powerful CPU (Ryzen 9, Intel i9), this takes 2–5 minutes. On an i3-10105F, it takes 15–30 minutes. The editor will appear frozen. The window manager might show "Not Responding." Do not kill it.
+        </p>
+        <div class="callout warn">
+          <strong>How to tell if it's actually hung vs. just compiling shaders:</strong>
+          <pre># Check if the process is still alive:
+ps aux | grep UnrealEditor
+# If you see it in "D" state (uninterruptible sleep)
+# or "R" state (running), it's working.
+# If it exits, it crashed.</pre>
+        </div>
+      </div>
+
+      <div class="reveal" id="wayland">
+        <h2>12. Wayland Problems</h2>
+        <p>
+          Nobara Linux defaults to a Wayland session on KDE Plasma. Wayland is the modern display server protocol replacing X11. It's smoother, more secure, and generally better for everyday desktop use.
+        </p>
+        <p>
+          Unreal Engine does not care about any of that.
+        </p>
+        <p>
+          Under Wayland, the editor launched but exhibited the following behaviors:
+        </p>
+        <ul>
+          <li><strong>Input offset:</strong> Clicks registered 50–100 pixels to the left and above where the cursor actually was. Clicking a button required aiming at empty space to its lower-right.</li>
+          <li><strong>Phantom clicks:</strong> The editor would randomly open context menus, select objects, or toggle settings without any input from me — as if a ghost was using the mouse.</li>
+          <li><strong>Window positioning:</strong> Pop-ups and dialogs opened off-screen or at wrong coordinates.</li>
+          <li><strong>Drag-and-drop:</strong> Dragging assets from the Content Browser into the viewport didn't work. The drag operation would cancel immediately.</li>
+          <li><strong>Crash on exit:</strong> Closing the editor under Wayland consistently triggered a segfault.</li>
+        </ul>
+        <p>
+          These are not Unreal bugs per se. They are SDL backend bugs. Unreal Engine uses SDL (Simple Directmedia Layer) for window and input handling. On Linux, SDL supports both Wayland and X11 backends. The Wayland backend in SDL — especially the version shipped with Unreal 5.7.4 — has unresolved issues with input coordinate transformation, window decoration, and event handling when used with Vulkan.
+        </p>
+      </div>
+
+      <div class="reveal" id="phantom">
+        <h2>13. Phantom Misclicks and UI Offset</h2>
+        <p>
+          The "phantom misclick" problem deserves its own section because it was the most disorienting issue I encountered.
+        </p>
+        <p>
+          Imagine this: You open Unreal Engine. The editor loads. You move your mouse toward the "File" menu. As your cursor crosses the viewport, the editor randomly selects a mesh. A context menu opens. A property changes value. The editor acts as if you're clicking everywhere at once, even though you haven't touched a button.
+        </p>
+        <p>
+          What's happening: Under Wayland, SDL sends mouse events with incorrect global coordinates. The editor receives a mouse-move event at position (500, 300). It interprets this as a click because the Wayland→X11 coordinate translation adds an offset equal to the window's client area position. The further your cursor moves, the more the offset accumulates. By the time you reach the top menu bar, the editor thinks you've been clicking the entire way.
+        </p>
+        <p>
+          The only fix: get off Wayland entirely. Unreal Engine 5.7.4 on Linux with NVIDIA + Vulkan + Wayland is not viable for actual work.
+        </p>
+      </div>
+
+      <div class="reveal" id="sdl">
+        <h2>14. Discovering the SDL X11 Fix — The Major Breakthrough</h2>
+        <p>
+          After two days of failed launches, phantom clicks, and black viewports, I found the fix. It's a single environment variable:
+        </p>
+        <pre>env SDL_VIDEODRIVER=x11 ./UnrealEditor</pre>
+        <p>
+          This forces SDL to use the X11 backend instead of Wayland. The editor suddenly works. Clicks register exactly where the cursor is. No phantom inputs. No offset. Drag-and-drop functions. Windows open at correct coordinates.
+        </p>
+        <p>
+          Let me be clear about what this means: <strong>Unreal Engine 5.7.4 on Linux runs correctly only under X11.</strong> Wayland support in SDL (at least the version Epic bundles) is incomplete. The editor is usable under Wayland for basic operations, but the mouse coordinate issue alone makes it unusable for actual content creation.
+        </p>
+        <p>
+          I refined the launch command further after discovering that NVIDIA's G-Sync and VRR (Variable Refresh Rate) could also cause instability with Unreal's Vulkan renderer. The final launch command became:
+        </p>
+        <pre>env SDL_VIDEODRIVER=x11 __GL_GSYNC_ALLOWED=0 __GL_VRR_ALLOWED=0 ./UnrealEditor</pre>
+
+        <div class="callout ok">
+          <strong>Breakdown of the flags:</strong><br>
+          <code>SDL_VIDEODRIVER=x11</code> — Forces SDL to use the X11 backend. Eliminates phantom clicks and UI offset.<br>
+          <code>__GL_GSYNC_ALLOWED=0</code> — Disables G-Sync for the editor. Prevents Vulkan swapchain synchronization issues that can cause frame drops or stalls.<br>
+          <code>__GL_VRR_ALLOWED=0</code> — Disables Variable Refresh Rate. Some NVIDIA drivers have conflicts with Vulkan's presentation engine when VRR is enabled.
+        </div>
+
+        <p>
+          The moment the editor finally opened smoothly under X11 — with a visible level, working menus, and no ghost clicks — felt less like a boot and more like surviving a boss fight. The viewport rendered. Materials appeared. Navigation worked. I could create a cube, apply a material, and see it update in real time.
+        </p>
+      </div>
+
+      <div class="reveal" id="vulkan">
+        <h2>15. Vulkan Memory Problems</h2>
+        <p>
+          With the editor running under X11, I hit the next wall: Vulkan memory errors.
+        </p>
+        <p>
+          GTX 1650 has 4GB of VRAM. Unreal Engine 5 assumes you have much more — especially with high-resolution textures, Lumen global illumination, and Nanite virtual geometry enabled. When the engine runs out of VRAM, Vulkan doesn't gracefully degrade. It throws errors.
+        </p>
+        <p>
+          The error messages look like this in the terminal output:
+        </p>
+        <pre>LogVulkanRHI: Warning: vkAllocateMemory failed with VK_ERROR_OUT_OF_DEVICE_MEMORY
+LogVulkanRHI: Error: Out of device memory. Tried to allocate 268435456 bytes
+LogVulkanRHI: Error: Vulkan transient heap failed to allocate 256 MB</pre>
+        <p>
+          When this happens, textures turn black, materials fail to compile, and the editor becomes unstable. In extreme cases, the GPU driver resets or the editor segfaults.
+        </p>
+        <p>
+          The solution is a combination of: (1) swap space, (2) engine configuration, and (3) project settings. Let's go through them.
+        </p>
+      </div>
+
+      <div class="reveal" id="swap">
+        <h2>16. Swap Space Investigation</h2>
+        <p>
+          Before tweaking Unreal, I needed to understand my system's memory situation. On Linux, swap is divided between <strong>zram</strong> (compressed RAM swap) and <strong>physical swap</strong> (disk-based swap partition or file). Unreal Engine is one of the few applications that will actually push you into swap — hard.
+        </p>
+        <p>
+          Here's the thing about zram: it's great for desktop responsiveness. It compresses memory pages that aren't actively used, effectively giving you more usable RAM. But when an application like Unreal starts allocating large contiguous GPU buffers, zram can't help — those allocations happen in VRAM, not system RAM. What zram <em>does</em> help with is the system memory pressure caused by Unreal's CPU-side data (mesh data, animation data, audio assets, etc.).
+        </p>
+        <p>
+          Physical swap on an NVMe SSD serves as the emergency overflow. When both system RAM and VRAM are full, the kernel starts swapping out memory pages to disk. This is slow (NVMe latency is measured in microseconds, but it's still orders of magnitude slower than RAM), but it prevents outright crashes.
+        </p>
+      </div>
+
+      <div class="reveal" id="swapon">
+        <h2>17. Using swapon --show</h2>
+        <p>
+          To check your current swap configuration:
+        </p>
+        <pre>swapon --show</pre>
+        <p>
+          On my system, this returned:
+        </p>
+        <pre>NAME           TYPE      SIZE USED PRIO
+/dev/zram0     partition 7.9G 2.1G  100
+/dev/nvme0n1p4 partition 8.0G 1.8G   -2</pre>
+        <p>
+          Two swap devices:
+        </p>
+        <ul>
+          <li><strong>/dev/zram0:</strong> 7.9GB of compressed in-RAM swap. The kernel compresses memory pages and stores them in a reserved portion of RAM. Effective capacity depends on compression ratio (typically 2:1 to 3:1 for general desktop use, meaning 7.9GB of zram can hold ~16–24GB of swapped-out pages).</li>
+          <li><strong>/dev/nvme0n1p4:</strong> 8GB of traditional disk-based swap on the NVMe SSD. This is the fallback — pages that can't be kept in zram end up here.</li>
+        </ul>
+        <p>
+          Total swap: ~16GB. With 16GB of physical RAM, that's 32GB of total addressable memory. For UE5 on a GTX 1650, this turned out to be adequate but not generous.
+        </p>
+        <div class="callout ok">
+          <strong>Verdict:</strong> My swap configuration was already healthy. If you're running Unreal on a system with less than 8GB of swap, you will almost certainly run into out-of-memory conditions during shader compilation. Consider adding a swap file:
+          <pre>sudo fallocate -l 8G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+# Add to /etc/fstab for persistence:
+# /swapfile none swap sw 0 0</pre>
+        </div>
+      </div>
+
+      <div class="reveal" id="whyswap">
+        <h2>18. Why Swap Matters for Unreal</h2>
+        <p>
+          Here's the specific scenario where swap saves your Unreal session:
+        </p>
+        <ol>
+          <li>You open a level with high-resolution textures (4K, 8K Megascans)</li>
+          <li>Unreal loads the textures into system memory first (for processing/decompression)</li>
+          <li>The textures are uploaded to VRAM for rendering</li>
+          <li>VRAM fills up (GTX 1650 = 4GB limit)</li>
+          <li>Unreal starts evicting textures from VRAM back to system memory</li>
+          <li>System memory fills up (16GB RAM shared with OS, editor, tools)</li>
+          <li><strong>Swap activates.</strong> The kernel moves idle pages (your browser, background services) to zram or disk</li>
+          <li>Unreal keeps running — slowly, but running</li>
+        </ol>
+        <p>
+          Without swap, step 7 would be an OOM (Out of Memory) kill. The kernel would pick a process to terminate, and it's often the largest one — which is Unreal.
+        </p>
+      </div>
+
+      <div class="reveal" id="transient">
+        <h2>19. Vulkan Transient Heap Errors</h2>
+        <p>
+          The "Vulkan transient heap" error is one of the most cryptic and frightening messages you'll see in the UE5 Linux terminal output. It looks like this:
+        </p>
+        <pre>LogVulkanRHI: Error: Vulkan transient heap failed to allocate 256 MB</pre>
+        <p>
+          Here's what a transient heap is: Vulkan allows applications to allocate temporary GPU memory for short-lived resources (render targets, scratch buffers, intermediate textures). These allocations happen on a "transient heap" — a pool of VRAM that the driver manages for ephemeral allocations. When the heap is full, <code>vkAllocateMemory</code> fails, and Unreal reports the error.
+        </p>
+        <p>
+          On a 4GB card, the transient heap typically gets set to 256MB or 512MB. When Unreal requests a temporary render target that exceeds the remaining heap space (because other textures are already occupying VRAM), the allocation fails.
+        </p>
+        <p>
+          This is NOT a memory leak (though memory leaks in plugins or custom shaders can exacerbate it). It's a fundamental mismatch between what UE5 expects and what the GTX 1650 can provide. The transient heap needs room to breathe, and on a 4GB card, there isn't much.
+        </p>
+      </div>
+
+      <div class="reveal" id="convar">
+        <h2>20. ConsoleVariables.ini Optimizations</h2>
+        <p>
+          The first place to intervene is <code>ConsoleVariables.ini</code>. This file lets you set persistent engine console variables that apply on every launch. On Linux, the path is:
+        </p>
+        <pre>~/.config/Epic/UnrealEngine/Engine/ConsoleVariables.ini</pre>
+        <p>
+          Create the file (and parent directories) if they don't exist:
+        </p>
+        <pre>mkdir -p ~/.config/Epic/UnrealEngine/Engine/
+nano ~/.config/Epic/UnrealEngine/Engine/ConsoleVariables.ini</pre>
+        <p>
+          Here are the settings that made the difference:
+        </p>
+        <pre>r.Vulkan.EnableDefrag=1
+r.Vulkan.FlushOnMapChange=1
+r.Streaming.PoolSize=1000</pre>
+
+        <div class="callout">
+          <strong>What each setting does:</strong>
+        </div>
+
+        <h3>r.Vulkan.EnableDefrag=1</h3>
+        <p>
+          Enables Vulkan memory defragmentation. As Unreal allocates and frees GPU resources, VRAM becomes fragmented. A 256MB allocation might fail not because 256MB is unavailable, but because no single contiguous 256MB block exists. Defragmentation compacts the heap, merging free regions into larger blocks. This is especially important on 4GB cards where fragmentation has less room to absorb.
+        </p>
+
+        <h3>r.Vulkan.FlushOnMapChange=1</h3>
+        <p>
+          Forces a Vulkan flush whenever a memory mapping changes. This prevents certain race conditions in the Vulkan driver where the CPU and GPU have different views of memory state. Without this, you can get visual corruption (flashing textures, black meshes) and sometimes driver-level crashes.
+        </p>
+
+        <h3>r.Streaming.PoolSize=1000</h3>
+        <p>
+          Limits the texture streaming pool to 1000MB (of the 4096MB available). This reserves ~3GB of VRAM for everything else: render targets, transient heaps, mesh buffers, shadow maps. The default pool size on a 4GB card might be 2500–3000MB, leaving almost nothing for other allocations. By capping it at 1000MB, textures load slightly slower (you might see more LOD transitions), but the engine stops hitting VK_ERROR_OUT_OF_DEVICE_MEMORY.
+        </p>
+
+        <div class="callout warn">
+          <strong>Tuning tip:</strong> If you have a 6GB card, try <code>r.Streaming.PoolSize=2000</code>. For 8GB, <code>r.Streaming.PoolSize=3000</code>. The formula is: total VRAM minus ~1.5GB for overhead and transient allocations.
+        </div>
+      </div>
+
+      <div class="reveal" id="disable">
+        <h2>21. Disabling Heavy UE5 Features</h2>
+        <p>
+          The next line of defense is Project Settings. Open <strong>Edit &rarr; Project Settings &rarr; Rendering</strong> and make the following changes:
+        </p>
+
+        <h3>Disable Lumen</h3>
+        <ul>
+          <li>Set <strong>Dynamic Global Illumination</strong> to "None"</li>
+          <li>Set <strong>Reflection Method</strong> to "Screen Space"</li>
+        </ul>
+        <p>
+          Lumen is Epic's real-time global illumination and reflection system. It's beautiful. It's also extremely expensive — requiring hundreds of compute shader dispatches per frame. On a GTX 1650, Lumen alone can consume 2–3GB of VRAM for its render targets (surface cache, mesh distance fields, irradiance volumes). Disabling Lumen frees up the majority of your VRAM for textures and geometry.
+        </p>
+
+        <h3>Disable Nanite</h3>
+        <ul>
+          <li>Uncheck <strong>Enable Nanite</strong>. If you get a prompt about rebuilding the lighting, accept it.</li>
+        </ul>
+        <p>
+          Nanite is Epic's virtualized geometry system that streams pixel-sized detail from high-poly source meshes. It's incredible for film-quality assets. But it requires GPU compute for cluster culling, page table management, and visibility buffers. Disabling Nanite means fallback to traditional mesh rendering (LOD-based), which is far less VRAM-intensive.
+        </p>
+
+        <h3>Disable Virtual Shadow Maps (VSM)</h3>
+        <ul>
+          <li>Set <strong>Shadow Map Method</strong> to "Shadow Maps" (the classic method)</li>
+        </ul>
+        <p>
+          Virtual Shadow Maps are Nanite's companion shadow system — they provide consistent shadow quality regardless of light count or resolution, but they consume significant GPU memory for the shadow atlas. Classic shadow maps are cheaper and work fine for non-photorealistic projects.
+        </p>
+
+        <div class="callout ok">
+          <strong>Expected VRAM savings:</strong><br>
+          Lumen disabled: saves ~2–3GB VRAM<br>
+          Nanite disabled: saves ~500MB–1GB VRAM<br>
+          VSM disabled: saves ~200–500MB VRAM<br>
+          Total: ~3–4.5GB VRAM freed, bringing the GTX 1650's 4GB into the usable range.
+        </div>
+      </div>
+
+      <div class="reveal" id="nanite">
+        <h2>22. Why Nanite and Lumen Were Disabled</h2>
+        <p>
+          This might sound like I'm "gimping" the engine. Why run UE5 if you're disabling its headline features?
+        </p>
+        <p>
+          Here's the truth: <strong>Not every project needs Nanite and Lumen.</strong>
+        </p>
+        <p>
+          The vast majority of games — especially indie games — use stylized, low-poly, or hand-painted art. Think <em>Hollow Knight</em>, <em>Firewatch</em>, <em>Disco Elysium</em>, <em>Ori and the Will of the Wisps</em>. None of these use Nanite. None use Lumen. They use baked lighting, smart material work, and artistic direction to create beautiful visuals without real-time GI or virtualized geometry.
+        </p>
+        <p>
+          For my projects — which lean toward stylized anime-inspired visuals and atmospheric 3D environments with a strong focus on interactive audio — Nanite is unnecessary. My meshes are below 100k triangles. My textures are 2K. My lighting is baked or uses simple dynamic directional lights. Disabling Nanite and Lumen doesn't reduce visual quality for me. It enables a stable editor.
+        </p>
+        <p>
+          <strong>Correct engineering is more important than blindly enabling cinematic features.</strong> If a feature actively harms your workflow and doesn't contribute to your visual target, remove it. That's not compromise — that's optimization.
+        </p>
+      </div>
+
+      <div class="reveal" id="stylized">
+        <h2>23. Why Stylized Games Don't Need Heavy RTX Features</h2>
+        <p>
+          There's a misconception in gamedev that "UE5 = photorealistic by default." This isn't true. UE5 is a rendering engine — it gives you the tools to achieve any visual style, but you choose which tools to use.
+        </p>
+        <p>
+          For stylized games:
+        </p>
+        <ul>
+          <li><strong>Lighting:</strong> Baked lightmaps or simple directional + ambient light. No need for Lumen.</li>
+          <li><strong>Geometry:</strong> Low-poly or hand-crafted assets with material-based detail. No need for Nanite.</li>
+          <li><strong>Shadows:</strong> Standard shadow maps at reasonable resolution. No need for Virtual Shadow Maps.</li>
+          <li><strong>Textures:</strong> 2K or even 1K with stylized UV layouts. No need for 8K Megascans.</li>
+          <li><strong>Post-processing:</strong> Toon shaders, cel outlines, color grading. Lighter than bloom + SSAO + SSR + GI combined.</li>
+        </ul>
+        <p>
+          Unreal Engine 5 is still the best engine for stylized games — you get the robust toolchain, Blueprint scripting, animation system, audio engine, and platform support. You're simply choosing not to enable the features that don't serve your art style.
+        </p>
+      </div>
+
+      <div class="reveal" id="vram">
+        <h2>24. VRAM Management on Linux</h2>
+        <p>
+          Linux handles GPU memory differently from Windows in some subtle but important ways:
+        </p>
+        <ul>
+          <li><strong>GART (Graphics Address Remapping Table):</strong> Linux uses GART to map GPU-accessible memory. The GART size is typically limited by the driver and BIOS — often 256MB–512MB on consumer NVIDIA cards. This is separate from VRAM and limits how much system RAM can be mapped into the GPU's address space at once.</li>
+          <li><strong>Memory overcommit:</strong> NVIDIA's Linux driver allows memory overcommit by default. Pages are allocated lazily — the driver doesn't reserve physical VRAM until the memory is actually used. This means <code>vulkan-memory-usage</code> tools might show lower usage than reality until rendering pressure hits.</li>
+          <li><strong>No D3D11-style "reserved" resources:</strong> Vulkan has no concept of "reserved" resources (the D3D11 tiled resource / streaming texture model). Textures in Vulkan are either fully resident in VRAM or not. When VRAM is full, uploads fail.</li>
+        </ul>
+        <p>
+          The practical implication: VRAM usage in Vulkan on Linux is less forgiving than D3D11 on Windows. You need to stay within your physical VRAM budget more carefully. The ConsoleVariables.ini and Project Settings tweaks above are not optional — they're required for VRAM-constrained cards.
+        </p>
+        <div class="callout">
+          <strong>Monitor VRAM usage in real-time:</strong>
+          <pre>nvidia-smi -l 2
+# Updates every 2 seconds showing VRAM usage, GPU utilization, and temperature</pre>
+        </div>
+      </div>
+
+      <div class="reveal" id="forward">
+        <h2>25. Forward Rendering Recommendation</h2>
+        <p>
+          One more rendering change that significantly improved stability on the GTX 1650: switching to the <strong>Forward Renderer</strong>.
+        </p>
+        <p>
+          Unreal Engine 5 defaults to the <strong>Deferred Renderer</strong>. Deferred rendering decouples geometry from lighting by rendering surface data (position, normal, material properties) into a "G-Buffer" first, then computing lighting in a separate pass. This enables many dynamic lights with high quality, but it requires multiple full-screen render targets (albedo, normal, roughness, metallic, velocity, etc.) — each consuming VRAM.
+        </p>
+        <p>
+          Forward rendering processes geometry and lighting together in a single pass. It uses fewer render targets, consumes less VRAM, and often performs better on mid-range GPUs. The trade-off: limited dynamic light count (typically 4–8 forward lights vs. unlimited deferred lights).
+        </p>
+        <p>
+          For stylized games with simple lighting setups (1 directional light + 1–2 fill lights), forward rendering is ideal.
+        </p>
+        <pre># In Project Settings > Rendering > Advanced:
+# Set "Forward Renderer" to "True"
+# Set "Use Forward Shading" to "True"</pre>
+        <p>
+          After switching to forward rendering, my VRAM usage dropped by roughly 500MB, and the viewport viewport responsiveness improved noticeably.
+        </p>
+      </div>
+
+      <div class="reveal" id="vt">
+        <h2>26. Disabling Virtual Textures</h2>
+        <p>
+          Virtual Texturing (VT) is UE5's system for streaming textures in 4KB page tiles, similar to how Nanite streams geometry. It's designed to handle thousands of unique 8K textures without exhausting VRAM — only the pages visible on screen are loaded.
+        </p>
+        <p>
+          In theory, this should help the GTX 1650. In practice, Virtual Texturing adds CPU overhead and can exacerbate Vulkan transient heap pressure on lower-end cards, because pages are uploaded and evicted at high frequency, and each upload consumes transient heap space.
+        </p>
+        <p>
+          The recommendation: disable Virtual Texturing and use traditional streaming.
+        </p>
+        <pre># In Project Settings > Rendering > Virtual Textures:
+# Uncheck "Enable Virtual Textures"
+# Under "Texture Streaming Pool Size", keep it at 1000 (or lower if needed)</pre>
+        <div class="callout ok">
+          <strong>Why not use VT?</strong>
+          Virtual Texturing is a great technology for high-end hardware (RTX 3060+ with 8+ GB VRAM). On 4GB cards, the page management overhead and transient heap churn outweigh the VRAM benefits. Traditional texture streaming with a capped pool size is more predictable and stable.
+        </div>
+      </div>
+
+      <div class="reveal" id="launch">
+        <h2>27. Final Stable Launch Command</h2>
+        <p>
+          Here is the exact command I use to launch Unreal Engine 5.7.4 on Nobara Linux, NVIDIA GTX 1650, Vulkan, running under KDE Plasma with X11:
+        </p>
+        <pre>#!/bin/bash
+# ~/launch-ue5.sh
+
+export SDL_VIDEODRIVER=x11
+export __GL_GSYNC_ALLOWED=0
+export __GL_VRR_ALLOWED=0
+export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.x86_64.json
+
+cd ~/Documents/UE5.7.4
+exec ./UnrealEditor "$@"</pre>
+
+        <p>Make it executable and launch:</p>
+        <pre>chmod +x ~/launch-ue5.sh
+~/launch-ue5.sh</pre>
+
+        <div class="callout">
+          <strong>Alternative one-liner (no script needed):</strong>
+          <pre>env SDL_VIDEODRIVER=x11 __GL_GSYNC_ALLOWED=0 __GL_VRR_ALLOWED=0 ./UnrealEditor</pre>
+        </div>
+
+        <p>
+          The <code>VK_ICD_FILENAMES</code> variable ensures Vulkan uses the NVIDIA ICD (Installable Client Driver) rather than any Mesa/Vulkan fallback that might be installed. On Nobara, this is usually already correct, but being explicit prevents edge cases where a software Vulkan renderer (like <code>lvk</code> or <code>swiftshader</code>) gets priority.
+        </p>
+      </div>
+
+      <div class="reveal" id="result">
+        <h2>28. Result: A Stable Linux UE5 Workstation</h2>
+        <p>
+          After all the tweaks — X11 SDL override, Vulkan defragmentation, texture pool capping, Nanite/Lumen/VSM/VT disabled, forward rendering enabled, and swap verified — Unreal Engine 5.7.4 runs consistently on Nobara Linux with the following behavior:
+        </p>
+
+        <div class="callout ok">
+          <strong>Stable Operation</strong>
+          <ul>
+            <li>Editor launches in under 60 seconds (from ~30 seconds on subsequent launches)</li>
+            <li>Viewport renders at 30–60 FPS (depending on complexity)</li>
+            <li>No phantom clicks or input offset</li>
+            <li>No Vulkan memory errors during normal editing</li>
+            <li>No segfaults on exit</li>
+            <li>Fab plugin accessible for marketplace content</li>
+            <li>Quixel Bridge integration functional for Megascans</li>
+            <li>Shader compilation happens once; subsequent launches use cached shaders</li>
+            <li>VRAM usage stays under 3.5GB (with headroom)</li>
+            <li>System memory (RAM + swap) remains within 16GB + 8GB swap budget</li>
+          </ul>
+        </div>
+
+        <p>
+          Is it as fast as on a Windows machine with identical hardware? Probably not — driver optimization for Vulkan on NVIDIA Linux is not as mature as D3D12 on Windows. Is it usable for actual gamedev? Absolutely. I'm building a playable 3D environment with interactive music, stylized visuals, and dynamic audio — all running in UE5 on Linux.
+        </p>
+      </div>
+
+      <div class="reveal" id="advice">
+        <h2>29. Advice for Other Linux Gamedevs</h2>
+        <p>
+          If you're reading this and planning to set up UE5 on Linux, here is the distilled advice from everything I learned:
+        </p>
+
+        <ol>
+          <li><strong>Use X11.</strong> Wayland is not ready for Unreal Engine. Force <code>SDL_VIDEODRIVER=x11</code> and don't look back. You can run your desktop on Wayland (Plasma handles this gracefully) — only Unreal needs the X11 override.</li>
+          <li><strong>Check your swap before you check your GPU.</strong> A healthy swap configuration (zram + physical swap totaling at least 1x your RAM) prevents OOM kills during shader compilation.</li>
+          <li><strong>Cap the texture pool.</strong> <code>r.Streaming.PoolSize=1000</code> is the single most impactful ConsoleVariables.ini setting for low-VRAM cards.</li>
+          <li><strong>Disable features you don't need.</strong> Lumen, Nanite, Virtual Shadow Maps, and Virtual Textures are not "free." Every feature has a VRAM and compute cost. If your project doesn't need them, turn them off.</li>
+          <li><strong>Prefer Forward Rendering</strong> for stylized or low-light-count projects. It saves VRAM and runs faster on mid-range hardware.</li>
+          <li><strong>Know your hardware limit.</strong> GTX 1650 with 4GB is the floor for UE5. It works, but you're in "optimize everything" territory. If you can upgrade to 6GB+, do it.</li>
+          <li><strong>Don't use the Epic Games Launcher expectation.</strong> There is no "one-click install" on Linux. Learn the plugin directory structure. Understand that engine installation is manual.</li>
+          <li><strong>Let shaders compile fully</strong> before judging performance. The first launch is always terrible. The 5th launch is fine.</li>
+        </ol>
+      </div>
+
+      <div class="reveal" id="final">
+        <h2>30. Final Thoughts</h2>
+        <p>
+          Installing Unreal Engine on Linux is less like installing software and more like taming a creature. You don't just run an installer — you learn its habits, its weak points, the conditions under which it thrives. You adjust the environment to suit it. And eventually, it runs.
+        </p>
+        <p>
+          This isn't a workflow issue. It's not even a "Linux isn't ready for game development" issue. The engine itself works perfectly on Linux — the binaries compile and run, the editor is functional, the toolchain (clang, CMake, Ninja) is native. The gaps are in the ecosystem: the launcher, the marketplace, the auto-configuration that Windows users take for granted.
+        </p>
+        <p>
+          But here's the thing: once you've gone through this setup once, you understand Unreal Engine better than the average Windows user. You know where plugins live. You know how SDL interacts with display servers. You know how Vulkan memory management works. You know why swap matters. You're not just using the engine — you understand it.
+        </p>
+        <p>
+          For me, this setup unlocked a path I didn't know was open: making games on Linux with the same tool that powers AAA titles. Running UE5 with a GTX 1650, 16GB of RAM, and an i3 processor is not ideal. But it's real. It works. And it proves that high-end game development doesn't require a high-end Windows machine — it requires patience, understanding, and the willingness to type a few extra commands in the terminal.
+        </p>
+        <p>
+          The editor is open. The viewport is rendering. Fab is connected. Quixel Bridge is synced. And I'm building something with it — on Linux, with Vulkan, under X11, on a machine that Epic's recommended specs page would call insufficient.
+        </p>
+        <p>
+          That's the whole point.
+        </p>
+
+        <hr>
+
+        <p><em>This post is part of the <strong>DTM Problems</strong> series — documenting real-world solutions for creative production on Linux. From music to games, if it runs on Linux, it gets documented here.</em></p>
+      </div>
+
+    </div>
+  </article>
+</div>
+
+<footer>
+  <p><strong>DTM Problems</strong> - Electronic Music Production in Linux by CDNJ / Riddhiman Dutta</p>
+  <p class="ai-credit">Built with assistance from <strong>DeepSeek V4 Flash Free</strong></p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') });
+}, { threshold: .1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
